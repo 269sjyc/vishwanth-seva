@@ -77,9 +77,9 @@ html, body {
 
 /* ── Hidden YT frame ── */
 #yt-player {
-  position: absolute;
-  width: 1px; height: 1px;
-  opacity: 0;
+  position: fixed;
+  width: 2px; height: 2px;
+  opacity: 0.01;
   pointer-events: none;
 }
 
@@ -425,7 +425,7 @@ html, body {
   <div class="progress-row">
     <span class="time-label" id="time-cur">0:00</span>
     <input type="range" id="progress" min="0" max="100" value="0" step="0.1"
-           oninput="onSeek(this.value)">
+           oninput="onSeek(this.value)" onchange="onSeek(this.value)">
     <span class="time-label" id="time-dur">0:00</span>
   </div>
 
@@ -508,8 +508,25 @@ function onYouTubeIframeAPIReady() {
 function onPlayerReady() {
   playerReady = true;
   ytPlayer.setVolume(80);
-  ytPlayer.cuePlaylist({ listType: 'playlist', list: currentPlaylistId, index: 0 });
-  setTimeout(refreshCurrentTrackInfo, 1500);
+  // Load playlist first with index 0 so we can get total count, then jump to random
+  ytPlayer.loadPlaylist({ listType: 'playlist', list: currentPlaylistId, index: 0 });
+  // Wait for playlist to load, then pick a random track
+  let attempts = 0;
+  const pickRandom = setInterval(() => {
+    attempts++;
+    try {
+      const list = ytPlayer.getPlaylist();
+      if (list && list.length > 0) {
+        clearInterval(pickRandom);
+        const randomIdx = Math.floor(Math.random() * list.length);
+        ytPlayer.playVideoAt(randomIdx);
+        currentIndex = randomIdx;
+      } else if (attempts > 20) {
+        clearInterval(pickRandom);
+        ytPlayer.playVideo();
+      }
+    } catch(e) { clearInterval(pickRandom); }
+  }, 300);
 }
 
 function onPlayerStateChange(e) {
@@ -703,6 +720,20 @@ function toggleQueue() {
   if (queueOpen && queueItems.length === 0) buildQueue();
 }
 
+// Close queue when clicking/touching anywhere outside it
+function closeQueueOnOutsideClick(e) {
+  if (!queueOpen) return;
+  const panel = document.getElementById('queue-panel');
+  const qBtn  = document.getElementById('queue-btn');
+  if (!panel.contains(e.target) && !qBtn.contains(e.target)) {
+    queueOpen = false;
+    panel.classList.remove('open');
+    qBtn.classList.remove('active');
+  }
+}
+document.addEventListener('click', closeQueueOnOutsideClick);
+document.addEventListener('touchend', closeQueueOnOutsideClick, { passive: true });
+
 function buildQueue() {
   const panel = document.getElementById('queue-list');
   panel.innerHTML = '<div style="color:#888;padding:16px;text-align:center">Loading…</div>';
@@ -781,4 +812,5 @@ async function fetchTitlesInBatches(ids) {
 </script>
 </body>
 </html>
+
 
