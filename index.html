@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vishwanath Seva</title>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 /* ── Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; }
@@ -367,6 +370,125 @@ html, body {
   .vol-row #vol-slider { display: none; }
   .ctrl-btn { min-width: 44px; min-height: 44px; }
 }
+
+/* ── JAM ── */
+#jam-btn {
+  background: linear-gradient(135deg, #ff6b35, #f7c59f);
+  color: #1a0800;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  min-height: 34px;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 2px 10px rgba(255,107,53,0.4);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#jam-btn:hover { transform: scale(1.05); box-shadow: 0 4px 16px rgba(255,107,53,0.6); }
+#jam-btn.active {
+  background: linear-gradient(135deg, #43a047, #a5d6a7);
+  box-shadow: 0 2px 10px rgba(67,160,71,0.5);
+}
+
+#jam-status {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  background: rgba(12,12,22,0.85);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+#jam-status.visible { display: flex; }
+#jam-status .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #43a047;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.85); }
+}
+
+#jam-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(6px);
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+#jam-modal.open { display: flex; }
+#jam-modal-box {
+  background: rgba(18,18,28,0.98);
+  border: 1px solid rgba(255,180,0,0.3);
+  border-radius: 20px;
+  padding: 28px 24px;
+  width: min(420px, 100%);
+  color: #fff;
+  text-align: center;
+}
+#jam-modal-box h2 {
+  font-size: 1.4rem;
+  margin-bottom: 6px;
+  background: linear-gradient(135deg, #ff6b35, #ffd54f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+#jam-modal-box p { color: #aaa; font-size: 0.88rem; margin-bottom: 18px; }
+#jam-link-box {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.78rem;
+  color: #ffd54f;
+  word-break: break-all;
+  margin-bottom: 14px;
+  text-align: left;
+  cursor: pointer;
+  user-select: all;
+}
+#jam-copy-btn {
+  background: #ffb300;
+  color: #111;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 28px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+  width: 100%;
+  transition: background 0.15s;
+}
+#jam-copy-btn:hover { background: #ffc107; }
+#jam-close-btn {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #aaa;
+  border-radius: 999px;
+  padding: 8px 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  width: 100%;
+  margin-top: 4px;
+}
+#jam-close-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
 </style>
 </head>
 <body>
@@ -396,6 +518,23 @@ html, body {
 <!-- Queue Panel -->
 <div id="queue-panel">
   <div id="queue-list"></div>
+</div>
+
+<!-- Jam Status indicator (top right) -->
+<div id="jam-status">
+  <span class="dot"></span>
+  <span id="jam-status-text">Jam • 1 listening</span>
+</div>
+
+<!-- Jam Modal -->
+<div id="jam-modal">
+  <div id="jam-modal-box">
+    <h2>🎸 Jam Session</h2>
+    <p>Share this link with your friend. Both of you control the music together!</p>
+    <div id="jam-link-box" onclick="copyJamLink()">Loading…</div>
+    <button id="jam-copy-btn" onclick="copyJamLink()">📋 Copy Link</button>
+    <button id="jam-close-btn" onclick="closeJamModal()">Close</button>
+  </div>
 </div>
 
 <!-- Player Bar -->
@@ -433,6 +572,7 @@ html, body {
     <button class="ctrl-btn" id="mute-btn" title="Mute" onclick="toggleMute()">🔊</button>
     <input type="range" id="vol-slider" min="0" max="100" value="80"
            oninput="onVolume(this.value)">
+    <button id="jam-btn" onclick="openJamModal()" title="Start Jam Session">🎸 Jam</button>
   </div>
 </div>
 
@@ -610,7 +750,9 @@ function onSeek(val) {
   if (!playerReady || !ytPlayer) return;
   try {
     const dur = ytPlayer.getDuration() || 0;
-    ytPlayer.seekTo((val / 100) * dur, true);
+    const newTime = (val / 100) * dur;
+    ytPlayer.seekTo(newTime, true);
+    broadcastState('seek', { currentTime: newTime });
   } catch(e) {}
 }
 
@@ -647,18 +789,20 @@ function togglePlay() {
     const state = ytPlayer.getPlayerState();
     if (state === YT.PlayerState.PLAYING) {
       ytPlayer.pauseVideo();
+      broadcastState('pause', { currentTime: ytPlayer.getCurrentTime() });
     } else {
       ytPlayer.playVideo();
+      broadcastState('play', { currentTime: ytPlayer.getCurrentTime() });
     }
   } catch(e) {}
 }
 function prevTrack() {
   if (!playerReady || !ytPlayer) return;
-  try { ytPlayer.previousVideo(); } catch(e) {}
+  try { ytPlayer.previousVideo(); broadcastState('prev'); } catch(e) {}
 }
 function nextTrack() {
   if (!playerReady || !ytPlayer) return;
-  try { ytPlayer.nextVideo(); } catch(e) {}
+  try { ytPlayer.nextVideo(); broadcastState('next'); } catch(e) {}
 }
 function toggleShuffle() {
   isShuffle = !isShuffle;
@@ -784,6 +928,7 @@ function playQueueItem(idx) {
     ytPlayer.playVideoAt(idx);
     currentIndex = idx;
     highlightQueueItem(idx);
+    broadcastState('trackChange', { trackIndex: idx });
   } catch(e) {}
 }
 
@@ -808,6 +953,235 @@ async function fetchTitlesInBatches(ids) {
     renderQueue();
     await new Promise(r => setTimeout(r, 200));
   }
+}
+
+/* ════════════════════════════════════════════
+   JAM SESSION — Firebase Realtime Sync
+   ════════════════════════════════════════════
+   SETUP: Replace the firebaseConfig below with
+   your own from https://console.firebase.google.com
+   → Create project → Add web app → Copy config
+   → Realtime Database → Create database (test mode)
+   ============================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDEMO_REPLACE_WITH_YOUR_KEY",
+  authDomain: "your-project.firebaseapp.com",
+  databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:demo"
+};
+
+let jamDb = null;
+let jamSessionId = null;
+let jamRef = null;
+let jamPresenceRef = null;
+let isJamActive = false;
+let isSyncing = false; // prevent feedback loops
+let localUserId = 'user_' + Math.random().toString(36).substr(2, 8);
+
+function initFirebase() {
+  try {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    jamDb = firebase.database();
+    return true;
+  } catch(e) {
+    console.warn('Firebase init failed:', e);
+    return false;
+  }
+}
+
+function generateSessionId() {
+  return Math.random().toString(36).substr(2, 8).toUpperCase();
+}
+
+function openJamModal() {
+  // Check if already in a session via URL param
+  const params = new URLSearchParams(window.location.search);
+  const existingId = params.get('jam');
+
+  if (!jamSessionId) {
+    jamSessionId = existingId || generateSessionId();
+  }
+
+  const jamUrl = `${window.location.origin}${window.location.pathname}?jam=${jamSessionId}`;
+  document.getElementById('jam-link-box').textContent = jamUrl;
+  document.getElementById('jam-modal').classList.add('open');
+
+  // Start session if not already active
+  if (!isJamActive) startJamSession(jamSessionId);
+}
+
+function closeJamModal() {
+  document.getElementById('jam-modal').classList.remove('open');
+}
+
+function copyJamLink() {
+  const params = new URLSearchParams(window.location.search);
+  const id = jamSessionId || params.get('jam');
+  if (!id) return;
+  const url = `${window.location.origin}${window.location.pathname}?jam=${id}`;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('jam-copy-btn');
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = '📋 Copy Link'; }, 2000);
+  }).catch(() => {
+    document.getElementById('jam-link-box').select?.();
+  });
+}
+
+function startJamSession(sessionId) {
+  if (!initFirebase()) {
+    alert('⚠️ Firebase not configured yet.\n\nTo enable Jam sessions:\n1. Go to console.firebase.google.com\n2. Create a free project\n3. Add a web app\n4. Enable Realtime Database\n5. Paste your config in the code');
+    return;
+  }
+
+  jamSessionId = sessionId;
+  isJamActive = true;
+
+  // Update URL without reload
+  const newUrl = `${window.location.origin}${window.location.pathname}?jam=${sessionId}`;
+  window.history.replaceState({}, '', newUrl);
+
+  // Update modal link
+  document.getElementById('jam-link-box').textContent = newUrl;
+
+  jamRef = jamDb.ref(`jam/${sessionId}/state`);
+  jamPresenceRef = jamDb.ref(`jam/${sessionId}/presence/${localUserId}`);
+
+  // Set presence
+  jamPresenceRef.set({ online: true, joinedAt: Date.now() });
+  jamPresenceRef.onDisconnect().remove();
+
+  // Watch presence count
+  jamDb.ref(`jam/${sessionId}/presence`).on('value', snap => {
+    const count = snap.numChildren();
+    document.getElementById('jam-status-text').textContent = `Jam • ${count} listening`;
+    document.getElementById('jam-status').classList.toggle('visible', count > 0);
+  });
+
+  // Listen for remote state changes
+  jamRef.on('value', snap => {
+    const state = snap.val();
+    if (!state) return;
+    if (state.updatedBy === localUserId) return; // ignore our own updates
+    applyRemoteState(state);
+  });
+
+  // Mark jam button active
+  document.getElementById('jam-btn').classList.add('active');
+  document.getElementById('jam-btn').textContent = '🎸 In Jam';
+  document.getElementById('jam-status').classList.add('visible');
+}
+
+function broadcastState(action, extra) {
+  if (!isJamActive || !jamRef || isSyncing) return;
+  try {
+    const state = {
+      action,
+      playlistId: currentPlaylistId,
+      playlistName: currentPlaylistName,
+      trackIndex: playerReady ? (ytPlayer.getPlaylistIndex() || 0) : 0,
+      currentTime: playerReady ? (ytPlayer.getCurrentTime() || 0) : 0,
+      updatedBy: localUserId,
+      updatedAt: Date.now(),
+      ...extra
+    };
+    jamRef.set(state);
+  } catch(e) {}
+}
+
+function applyRemoteState(state) {
+  if (!playerReady || !ytPlayer) return;
+  isSyncing = true;
+  try {
+    // If playlist changed, switch it first
+    if (state.playlistId && state.playlistId !== currentPlaylistId) {
+      const tabBtn = document.querySelector(`.tab-btn[data-id="${state.playlistId}"]`);
+      if (tabBtn) {
+        switchPlaylist(tabBtn);
+        // After switching, seek and play once loaded
+        setTimeout(() => {
+          applyRemotePlayback(state);
+        }, 2000);
+        return;
+      }
+    }
+    applyRemotePlayback(state);
+  } catch(e) {}
+  setTimeout(() => { isSyncing = false; }, 500);
+}
+
+function applyRemotePlayback(state) {
+  try {
+    if (state.action === 'play') {
+      if (state.trackIndex !== undefined) {
+        const curIdx = ytPlayer.getPlaylistIndex();
+        if (curIdx !== state.trackIndex) {
+          ytPlayer.playVideoAt(state.trackIndex);
+        } else {
+          if (state.currentTime && Math.abs(ytPlayer.getCurrentTime() - state.currentTime) > 2) {
+            ytPlayer.seekTo(state.currentTime, true);
+          }
+          ytPlayer.playVideo();
+        }
+      } else {
+        ytPlayer.playVideo();
+      }
+    } else if (state.action === 'pause') {
+      ytPlayer.pauseVideo();
+      if (state.currentTime) ytPlayer.seekTo(state.currentTime, true);
+    } else if (state.action === 'seek') {
+      if (state.currentTime !== undefined) ytPlayer.seekTo(state.currentTime, true);
+    } else if (state.action === 'next') {
+      ytPlayer.nextVideo();
+    } else if (state.action === 'prev') {
+      ytPlayer.previousVideo();
+    } else if (state.action === 'trackChange') {
+      if (state.trackIndex !== undefined) ytPlayer.playVideoAt(state.trackIndex);
+    }
+  } catch(e) {}
+  setTimeout(() => { isSyncing = false; }, 500);
+}
+
+// Auto-join session from URL on page load
+(function autoJoinJam() {
+  const params = new URLSearchParams(window.location.search);
+  const jamId = params.get('jam');
+  if (jamId) {
+    // Wait for player to be ready before joining
+    const waitForPlayer = setInterval(() => {
+      if (playerReady) {
+        clearInterval(waitForPlayer);
+        startJamSession(jamId);
+        // Show a toast notification
+        showJamToast('🎸 Joined Jam session!');
+      }
+    }, 500);
+  }
+})();
+
+function showJamToast(msg) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position:fixed;top:60px;left:50%;transform:translateX(-50%);
+    background:rgba(18,18,28,0.95);color:#ffd54f;padding:10px 20px;
+    border-radius:999px;font-size:0.88rem;font-weight:600;z-index:400;
+    border:1px solid rgba(255,180,0,0.4);backdrop-filter:blur(10px);
+    animation:fadeInOut 3s ease forwards;pointer-events:none;
+  `;
+  toast.textContent = msg;
+  if (!document.getElementById('toast-style')) {
+    const s = document.createElement('style');
+    s.id = 'toast-style';
+    s.textContent = '@keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}85%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}';
+    document.head.appendChild(s);
+  }
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3100);
 }
 </script>
 </body>
