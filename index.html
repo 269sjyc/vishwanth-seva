@@ -27,7 +27,7 @@
     html, body {
       width: 100%;
       height: 100%;
-      background: url('bus.jpeg') center center / cover no-repeat scroll;
+      background: url('./bus.jpeg') center center / cover no-repeat;
       font-family: 'Segoe UI', Arial, sans-serif;
       overflow-x: hidden;
     }
@@ -475,16 +475,16 @@
 
   <!-- MOBILE FIXES -->
   <style>
-    /* Fix 1: Full-screen bg image for iOS (fixed attachment broken on Safari mobile) */
+    /* Fix 1: Full-screen bg image - works on iOS Safari and all browsers */
     .bg-cover {
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: url('bus.jpeg') center center / cover no-repeat;
+      background: url('./bus.jpeg') center center / cover no-repeat;
       z-index: -1;
     }
     html, body {
-      background: transparent !important;
+      background: transparent;
     }
 
     /* Fix 2: Tabs wrap on small screens */
@@ -1030,6 +1030,7 @@
   </script>
 </body>
 </html>
+
 
 
 
