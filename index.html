@@ -128,7 +128,7 @@ html, body {
 /* ── Queue Panel ── */
 #queue-panel {
   position: fixed;
-  bottom: 110px;
+  bottom: 90px;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
   width: min(560px, 96vw);
@@ -185,12 +185,12 @@ html, body {
   bottom: 18px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(560px, 96vw);
+  width: min(500px, 96vw);
   background: rgba(12,12,22,0.82);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 22px;
-  padding: 10px 16px 12px;
+  padding: 6px 12px 8px;
   z-index: 50;
   box-shadow: 0 8px 32px rgba(0,0,0,0.55);
   border: 1px solid rgba(255,255,255,0.08);
@@ -201,14 +201,14 @@ html, body {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 #thumb-wrap {
   position: relative;
   flex-shrink: 0;
 }
 #thumb {
-  width: 52px; height: 52px;
+  width: 38px; height: 38px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(255,180,0,0.5);
@@ -227,7 +227,7 @@ html, body {
   overflow: hidden;
 }
 #track-name {
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: #fff;
   white-space: nowrap;
@@ -235,7 +235,7 @@ html, body {
   text-overflow: ellipsis;
 }
 #channel-name {
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   color: #aaa;
   white-space: nowrap;
   overflow: hidden;
@@ -248,18 +248,18 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 4px;
+  margin-bottom: 2px;
 }
 .ctrl-btn {
   background: none;
   border: none;
   cursor: pointer;
   color: #ccc;
-  font-size: 1.2rem;
+  font-size: 1rem;
   padding: 6px;
   border-radius: 50%;
-  min-width: 36px; min-height: 36px;
+  min-width: 30px; min-height: 30px;
   display: flex; align-items: center; justify-content: center;
   transition: color 0.15s, background 0.15s;
 }
@@ -268,8 +268,8 @@ html, body {
 #play-btn {
   background: #ffb300;
   color: #111;
-  font-size: 1.4rem;
-  min-width: 48px; min-height: 48px;
+  font-size: 1.15rem;
+  min-width: 38px; min-height: 38px;
   border-radius: 50%;
   box-shadow: 0 3px 14px rgba(255,180,0,0.45);
   transition: background 0.15s, transform 0.1s;
@@ -294,12 +294,12 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-}
+  gap: 5px;}
 .time-label {
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   color: #999;
   white-space: nowrap;
-  min-width: 36px;
+  min-width: 28px;
 }
 #progress {
   flex: 1;
@@ -328,13 +328,13 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 6px;
+  margin-top: 3px;
   justify-content: flex-end;
 }
 #mute-btn { font-size: 1rem; }
 #vol-slider {
   -webkit-appearance: none;
-  width: 80px; height: 4px;
+  width: 60px; height: 4px;
   border-radius: 2px;
   background: rgba(255,255,255,0.15);
   outline: none;
@@ -675,10 +675,10 @@ html, body {
 ══════════════════════════════════════ */
 #bus-scene {
   position: fixed;
-  bottom: 140px;
+  bottom: 105px;
   left: 0;
   width: 100%;
-  height: 120px;
+  height: 130px;
   z-index: 3;
   pointer-events: none;
   overflow: visible;
@@ -845,21 +845,40 @@ html, body {
   to   { transform: translateY(-3px); }
 }
 
-/* Road line */
+/* Road */
 #road-line {
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
+  height: 22px;
+  background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+  border-top: 2px solid #555;
+  overflow: hidden;
+}
+/* Dashed lane markings via pseudo-element */
+#road-line::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -100%;
+  width: 300%;
   height: 3px;
-  background: linear-gradient(90deg,
-    transparent 0%, rgba(255,255,255,0.15) 20%,
-    transparent 40%, rgba(255,255,255,0.15) 60%,
-    transparent 80%, rgba(255,255,255,0.15) 100%);
+  background: repeating-linear-gradient(
+    90deg,
+    #fdd835 0px, #fdd835 30px,
+    transparent 30px, transparent 60px
+  );
+  transform: translateY(-50%);
+  animation: roadScroll 1.5s linear infinite;
+}
+@keyframes roadScroll {
+  from { transform: translateY(-50%) translateX(0); }
+  to   { transform: translateY(-50%) translateX(60px); }
 }
 
 @media (max-width: 480px) {
-  #bus-scene { bottom: 120px; height: 80px; }
+  #bus-scene { bottom: 95px; height: 100px; }
   #bus-body  { transform: scale(0.7); transform-origin: bottom left; }
   #weather-badge { top: 56px; font-size: 0.7rem; }
 }
@@ -938,7 +957,7 @@ html, body {
 /* ── BUS HORN ── */
 #horn-btn {
   position: fixed;
-  bottom: 160px;
+  bottom: 135px;
   right: 20px;
   z-index: 60;
   width: 58px; height: 58px;
@@ -975,8 +994,8 @@ html, body {
   display: flex;
   align-items: flex-end;
   gap: 2px;
-  height: 20px;
-  margin-top: 4px;
+  height: 14px;
+  margin-top: 2px;
   opacity: 0;
   transition: opacity 0.4s;
 }
@@ -1006,7 +1025,7 @@ html, body {
 
 #history-panel {
   position: fixed;
-  bottom: 110px;
+  bottom: 90px;
   right: 20px;
   width: min(320px, 92vw);
   max-height: 320px;
@@ -1081,7 +1100,7 @@ html, body {
 
 #sleep-menu {
   position: fixed;
-  bottom: 110px;
+  bottom: 90px;
   right: 60px;
   background: rgba(18,18,28,0.97);
   border: 1px solid rgba(255,255,255,0.1);
@@ -1109,7 +1128,7 @@ html, body {
 /* ── VISITOR COUNTER ── */
 #visitor-count {
   position: fixed;
-  bottom: 160px;
+  bottom: 135px;
   left: 16px;
   z-index: 60;
   background: rgba(12,12,22,0.8);
@@ -1128,7 +1147,7 @@ html, body {
 /* ── REACTIONS ── */
 #reaction-bar {
   position: fixed;
-  bottom: 220px;
+  bottom: 185px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 60;
@@ -2570,6 +2589,8 @@ async function generateNowPlayingCard() {
 </script>
 </body>
 </html>
+
+
 
 
 
