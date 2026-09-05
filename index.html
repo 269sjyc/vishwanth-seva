@@ -81,11 +81,8 @@ html, body {
 /* ── Hidden YT frame ── */
 #yt-player {
   position: fixed;
-  top: -100px;
-  left: -100px;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
+  width: 2px; height: 2px;
+  opacity: 0.01;
   pointer-events: none;
 }
 
@@ -178,7 +175,7 @@ html, body {
   width: 44px; height: 30px;
   object-fit: cover;
   border-radius: 5px;
-  background: #222;
+  background: #bcbaba;
   flex-shrink: 0;
 }
 
@@ -492,12 +489,438 @@ html, body {
   margin-top: 4px;
 }
 #jam-close-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+
+/* ══════════════════════════════════════
+   WEATHER + BUS SCENE
+══════════════════════════════════════ */
+
+/* Weather overlay - sits above bg, below everything else */
+#weather-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+  transition: background 3s ease;
+}
+
+/* Sky tint overlays per weather type */
+#weather-scene.sunny   { background: linear-gradient(180deg, rgba(255,200,50,0.08) 0%, transparent 60%); }
+#weather-scene.cloudy  { background: linear-gradient(180deg, rgba(80,90,110,0.35) 0%, transparent 70%); }
+#weather-scene.rainy   { background: linear-gradient(180deg, rgba(40,55,80,0.55) 0%, rgba(30,40,60,0.3) 100%); }
+#weather-scene.thunder { background: linear-gradient(180deg, rgba(20,20,40,0.7) 0%, rgba(40,30,60,0.4) 100%); }
+#weather-scene.foggy   { background: linear-gradient(180deg, rgba(180,180,190,0.4) 0%, rgba(160,165,175,0.3) 100%); }
+#weather-scene.snowy   { background: linear-gradient(180deg, rgba(200,220,240,0.3) 0%, transparent 80%); }
+
+/* ── SUN ── */
+#sun {
+  position: absolute;
+  top: 8%; right: 12%;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffe066 30%, #ffb300 70%, transparent 100%);
+  box-shadow: 0 0 60px 20px rgba(255,210,50,0.5), 0 0 120px 50px rgba(255,180,0,0.2);
+  opacity: 0;
+  transition: opacity 2s ease;
+  animation: sunPulse 4s ease-in-out infinite;
+}
+#sun.visible { opacity: 1; }
+@keyframes sunPulse {
+  0%,100% { box-shadow: 0 0 60px 20px rgba(255,210,50,0.5), 0 0 120px 50px rgba(255,180,0,0.2); }
+  50%      { box-shadow: 0 0 80px 30px rgba(255,220,60,0.7), 0 0 160px 70px rgba(255,190,0,0.3); }
+}
+/* Sun rays */
+.sun-ray {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 200px; height: 2px;
+  background: linear-gradient(90deg, rgba(255,220,80,0.6), transparent);
+  transform-origin: 0 50%;
+  border-radius: 2px;
+}
+
+/* ── CLOUDS ── */
+.cloud {
+  position: absolute;
+  background: rgba(255,255,255,0.85);
+  border-radius: 50px;
+  opacity: 0;
+  transition: opacity 2s ease;
+  animation: cloudDrift linear infinite;
+}
+.cloud.visible { opacity: 1; }
+.cloud::before, .cloud::after {
+  content: '';
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+}
+.cloud.dark { background: rgba(90,100,120,0.75); }
+@keyframes cloudDrift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(110vw + 300px)); }
+}
+
+/* ── RAIN ── */
+#rain-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+#rain-container.visible { opacity: 1; }
+.raindrop {
+  position: absolute;
+  top: -20px;
+  width: 1.5px;
+  background: linear-gradient(180deg, transparent, rgba(174,214,241,0.8));
+  border-radius: 2px;
+  animation: rainFall linear infinite;
+}
+@keyframes rainFall {
+  to { transform: translateY(110vh) translateX(-30px); opacity: 0; }
+}
+
+/* Heavy rain extra splash */
+.rain-splash {
+  position: absolute;
+  bottom: 0;
+  width: 4px; height: 2px;
+  background: rgba(174,214,241,0.5);
+  border-radius: 50%;
+  animation: splash 0.3s ease-out forwards;
+}
+@keyframes splash {
+  0%   { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+/* ── SNOW ── */
+#snow-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+#snow-container.visible { opacity: 1; }
+.snowflake {
+  position: absolute;
+  top: -10px;
+  color: white;
+  font-size: 1rem;
+  animation: snowFall linear infinite;
+  user-select: none;
+}
+@keyframes snowFall {
+  to { transform: translateY(110vh) translateX(40px) rotate(360deg); opacity: 0.2; }
+}
+
+/* ── LIGHTNING ── */
+#lightning {
+  position: fixed;
+  inset: 0;
+  background: rgba(220,230,255,0.9);
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── FOG ── */
+#fog-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 3s ease;
+}
+#fog-container.visible { opacity: 1; }
+.fog-layer {
+  position: absolute;
+  left: -100%;
+  width: 300%;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(200,205,215,0.35);
+  filter: blur(20px);
+  animation: fogDrift linear infinite alternate;
+}
+@keyframes fogDrift {
+  0%   { transform: translateX(0) scaleY(1); }
+  100% { transform: translateX(15%) scaleY(1.2); }
+}
+
+/* ── WEATHER BADGE ── */
+#weather-badge {
+  position: fixed;
+  top: 60px;
+  left: 16px;
+  z-index: 60;
+  background: rgba(12,12,22,0.75);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.1);
+  opacity: 0;
+  transition: opacity 1s ease;
+  pointer-events: none;
+}
+#weather-badge.visible { opacity: 1; }
+
+/* ══════════════════════════════════════
+   BUS ANIMATION
+══════════════════════════════════════ */
+#bus-scene {
+  position: fixed;
+  bottom: 140px;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  z-index: 3;
+  pointer-events: none;
+  overflow: visible;
+}
+
+#bus-wrapper {
+  position: absolute;
+  bottom: 0;
+  left: -280px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  animation: busDrive 28s linear infinite;
+}
+@keyframes busDrive {
+  0%   { left: -280px; }
+  100% { left: calc(100vw + 30px); }
+}
+
+/* Bus body — pure CSS hill bus */
+#bus-body {
+  position: relative;
+  width: 240px;
+  height: 90px;
+}
+
+/* Main chassis */
+.bus-chassis {
+  position: absolute;
+  bottom: 18px;
+  left: 0;
+  width: 240px;
+  height: 60px;
+  background: linear-gradient(180deg, #e53935 0%, #c62828 60%, #b71c1c 100%);
+  border-radius: 8px 12px 4px 4px;
+  box-shadow: inset 0 -3px 8px rgba(0,0,0,0.3), 2px 2px 8px rgba(0,0,0,0.4);
+}
+
+/* Yellow stripe */
+.bus-stripe {
+  position: absolute;
+  bottom: 36px;
+  left: 0;
+  width: 240px;
+  height: 14px;
+  background: linear-gradient(180deg, #fdd835, #f9a825);
+}
+
+/* Windows row */
+.bus-windows {
+  position: absolute;
+  top: 6px;
+  left: 16px;
+  display: flex;
+  gap: 5px;
+}
+.bus-win {
+  width: 24px;
+  height: 20px;
+  background: linear-gradient(135deg, rgba(150,210,255,0.85), rgba(100,170,220,0.6));
+  border: 1.5px solid rgba(255,255,255,0.3);
+  border-radius: 3px 3px 2px 2px;
+  position: relative;
+  overflow: hidden;
+}
+.bus-win::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 3px;
+  width: 40%;
+  height: 60%;
+  background: rgba(255,255,255,0.4);
+  border-radius: 1px;
+}
+
+/* Windshield */
+.bus-windshield {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 34px;
+  height: 24px;
+  background: linear-gradient(135deg, rgba(150,210,255,0.9), rgba(80,150,200,0.7));
+  border: 2px solid rgba(255,255,255,0.4);
+  border-radius: 4px 8px 2px 2px;
+}
+
+/* Headlight */
+.bus-headlight {
+  position: absolute;
+  bottom: 22px;
+  right: 4px;
+  width: 10px;
+  height: 8px;
+  background: #fff9c4;
+  border-radius: 2px;
+  box-shadow: 0 0 8px 4px rgba(255,250,150,0.6);
+  animation: headlightFlicker 3s ease-in-out infinite;
+}
+@keyframes headlightFlicker {
+  0%,90%,100% { opacity: 1; }
+  92%          { opacity: 0.7; }
+  95%          { opacity: 1; }
+}
+
+/* Wheels */
+.bus-wheel {
+  position: absolute;
+  bottom: 2px;
+  width: 28px;
+  height: 28px;
+  background: radial-gradient(circle at 35% 35%, #555, #111);
+  border-radius: 50%;
+  border: 3px solid #333;
+  box-shadow: inset 0 0 6px rgba(255,255,255,0.1);
+  animation: wheelSpin 0.6s linear infinite;
+}
+.bus-wheel::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 10px; height: 10px;
+  background: #888;
+  border-radius: 50%;
+  border: 2px solid #444;
+}
+.bus-wheel.front { right: 14px; }
+.bus-wheel.rear  { left: 24px; }
+@keyframes wheelSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Exhaust puff */
+.bus-exhaust {
+  position: absolute;
+  bottom: 28px;
+  left: -8px;
+}
+.puff {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(180,180,180,0.5);
+  animation: puffOut 1.2s ease-out infinite;
+}
+.puff:nth-child(1) { width: 12px; height: 12px; animation-delay: 0s; }
+.puff:nth-child(2) { width: 18px; height: 18px; animation-delay: 0.4s; }
+.puff:nth-child(3) { width: 10px; height: 10px; animation-delay: 0.8s; }
+@keyframes puffOut {
+  0%   { opacity: 0.7; transform: translate(0, 0) scale(0.5); }
+  100% { opacity: 0;   transform: translate(-30px, -20px) scale(2); }
+}
+
+/* Bus bounce while driving */
+#bus-wrapper {
+  animation: busDrive 28s linear infinite;
+}
+#bus-body {
+  animation: busBounce 0.35s ease-in-out infinite alternate;
+}
+@keyframes busBounce {
+  from { transform: translateY(0px); }
+  to   { transform: translateY(-3px); }
+}
+
+/* Road line */
+#road-line {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%, rgba(255,255,255,0.15) 20%,
+    transparent 40%, rgba(255,255,255,0.15) 60%,
+    transparent 80%, rgba(255,255,255,0.15) 100%);
+}
+
+@media (max-width: 480px) {
+  #bus-scene { bottom: 120px; height: 80px; }
+  #bus-body  { transform: scale(0.7); transform-origin: bottom left; }
+  #weather-badge { top: 56px; font-size: 0.7rem; }
+}
 </style>
 </head>
 <body>
 
 <!-- Background -->
 <div class="bg-cover"></div>
+
+<!-- Weather Scene -->
+<div id="weather-scene">
+  <div id="sun">
+    <div class="sun-ray" style="transform:rotate(0deg)"></div>
+    <div class="sun-ray" style="transform:rotate(30deg)"></div>
+    <div class="sun-ray" style="transform:rotate(60deg)"></div>
+    <div class="sun-ray" style="transform:rotate(90deg)"></div>
+    <div class="sun-ray" style="transform:rotate(120deg)"></div>
+    <div class="sun-ray" style="transform:rotate(150deg)"></div>
+    <div class="sun-ray" style="transform:rotate(180deg)"></div>
+    <div class="sun-ray" style="transform:rotate(210deg)"></div>
+    <div class="sun-ray" style="transform:rotate(240deg)"></div>
+    <div class="sun-ray" style="transform:rotate(270deg)"></div>
+    <div class="sun-ray" style="transform:rotate(300deg)"></div>
+    <div class="sun-ray" style="transform:rotate(330deg)"></div>
+  </div>
+  <div id="rain-container"></div>
+  <div id="snow-container"></div>
+  <div id="fog-container"></div>
+</div>
+<div id="lightning"></div>
+<div id="weather-badge">🌤 Loading weather…</div>
+
+<!-- Bus Scene -->
+<div id="bus-scene">
+  <div id="road-line"></div>
+  <div id="bus-wrapper">
+    <div id="bus-body">
+      <div class="bus-chassis">
+        <div class="bus-stripe"></div>
+        <div class="bus-windows">
+          <div class="bus-win"></div>
+          <div class="bus-win"></div>
+          <div class="bus-win"></div>
+          <div class="bus-win"></div>
+          <div class="bus-win"></div>
+          <div class="bus-win"></div>
+        </div>
+        <div class="bus-windshield"></div>
+        <div class="bus-headlight"></div>
+        <div class="bus-wheel front"></div>
+        <div class="bus-wheel rear"></div>
+      </div>
+      <div class="bus-exhaust">
+        <div class="puff"></div>
+        <div class="puff"></div>
+        <div class="puff"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Prayer Flags -->
 <div class="flags-rope">
@@ -1187,6 +1610,192 @@ function showJamToast(msg) {
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3100);
 }
+
+/* ════════════════════════════════════════════
+   LIVE WEATHER — Uttarkashi via Open-Meteo
+   Lat: 30.7268, Lon: 78.4354
+   Refreshes every 10 minutes
+   ════════════════════════════════════════════ */
+
+const UTTARKASHI = { lat: 30.7268, lon: 78.4354 };
+let currentWeatherType = 'sunny';
+let lightningTimer = null;
+
+// WMO Weather code → our type
+function wmoToType(code) {
+  if (code === 0)                    return 'sunny';
+  if (code <= 2)                     return 'sunny';
+  if (code === 3)                    return 'cloudy';
+  if (code >= 45 && code <= 48)      return 'foggy';
+  if (code >= 51 && code <= 67)      return 'rainy';
+  if (code >= 71 && code <= 77)      return 'snowy';
+  if (code >= 80 && code <= 82)      return 'rainy';
+  if (code >= 85 && code <= 86)      return 'snowy';
+  if (code >= 95 && code <= 99)      return 'thunder';
+  return 'cloudy';
+}
+
+function weatherEmoji(type) {
+  return { sunny:'☀️', cloudy:'⛅', rainy:'🌧', thunder:'⛈', foggy:'🌫', snowy:'❄️' }[type] || '🌤';
+}
+
+async function fetchWeather() {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${UTTARKASHI.lat}&longitude=${UTTARKASHI.lon}&current=weathercode,temperature_2m&timezone=Asia%2FKolkata`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const code = data.current.weathercode;
+    const temp = Math.round(data.current.temperature_2m);
+    const type = wmoToType(code);
+    const badge = document.getElementById('weather-badge');
+    badge.textContent = `${weatherEmoji(type)} Uttarkashi ${temp}°C`;
+    badge.classList.add('visible');
+    applyWeather(type);
+  } catch(e) {
+    // Fallback to cloudy/rainy (typical Uttarkashi monsoon)
+    applyWeather('rainy');
+  }
+}
+
+function applyWeather(type) {
+  if (type === currentWeatherType) return;
+  currentWeatherType = type;
+
+  const scene = document.getElementById('weather-scene');
+
+  // Remove all weather classes
+  scene.className = '';
+  scene.classList.add(type);
+
+  // Sun
+  const sun = document.getElementById('sun');
+  sun.classList.toggle('visible', type === 'sunny');
+
+  // Clouds
+  document.querySelectorAll('.cloud').forEach(c => c.remove());
+  if (type === 'cloudy' || type === 'rainy' || type === 'thunder') {
+    buildClouds(type);
+  }
+
+  // Rain
+  const rain = document.getElementById('rain-container');
+  rain.innerHTML = '';
+  rain.classList.toggle('visible', type === 'rainy' || type === 'thunder');
+  if (type === 'rainy' || type === 'thunder') buildRain(type === 'thunder' ? 180 : 100);
+
+  // Snow
+  const snow = document.getElementById('snow-container');
+  snow.innerHTML = '';
+  snow.classList.toggle('visible', type === 'snowy');
+  if (type === 'snowy') buildSnow();
+
+  // Fog
+  const fog = document.getElementById('fog-container');
+  fog.innerHTML = '';
+  fog.classList.toggle('visible', type === 'foggy');
+  if (type === 'foggy') buildFog();
+
+  // Lightning
+  if (lightningTimer) clearInterval(lightningTimer);
+  if (type === 'thunder') {
+    lightningTimer = setInterval(flashLightning, 4000 + Math.random() * 6000);
+  }
+}
+
+function buildClouds(type) {
+  const scene = document.getElementById('weather-scene');
+  const isDark = type === 'rainy' || type === 'thunder';
+  const configs = [
+    { top:'6%',  w:180, h:55,  dur:45, delay:0 },
+    { top:'12%', w:240, h:70,  dur:60, delay:-20 },
+    { top:'4%',  w:140, h:45,  dur:38, delay:-10 },
+    { top:'18%', w:200, h:60,  dur:52, delay:-35 },
+    { top:'8%',  w:160, h:50,  dur:42, delay:-5  },
+  ];
+  configs.forEach(cfg => {
+    const c = document.createElement('div');
+    c.className = 'cloud' + (isDark ? ' dark' : '') + ' visible';
+    c.style.cssText = `top:${cfg.top};width:${cfg.w}px;height:${cfg.h}px;
+      left:-${cfg.w+20}px;
+      animation-duration:${cfg.dur}s;
+      animation-delay:${cfg.delay}s;`;
+    c.style.setProperty('--cloud-end', `calc(100vw + ${cfg.w+40}px)`);
+    c.style.cssText += `animation-name:cloudDrift;animation-timing-function:linear;animation-iteration-count:infinite;`;
+    // reposition start so animation flows properly
+    c.style.left = `${Math.random() * 100}vw`;
+    scene.appendChild(c);
+    requestAnimationFrame(() => c.classList.add('visible'));
+  });
+}
+
+function buildRain(count) {
+  const container = document.getElementById('rain-container');
+  for (let i = 0; i < count; i++) {
+    const drop = document.createElement('div');
+    drop.className = 'raindrop';
+    const height = 12 + Math.random() * 20;
+    drop.style.cssText = `
+      left:${Math.random() * 100}%;
+      height:${height}px;
+      animation-duration:${0.5 + Math.random() * 0.6}s;
+      animation-delay:${Math.random() * -2}s;
+      opacity:${0.5 + Math.random() * 0.5};
+    `;
+    container.appendChild(drop);
+  }
+}
+
+function buildSnow() {
+  const container = document.getElementById('snow-container');
+  const flakes = ['❄', '❅', '❆', '·', '•'];
+  for (let i = 0; i < 60; i++) {
+    const flake = document.createElement('div');
+    flake.className = 'snowflake';
+    flake.textContent = flakes[Math.floor(Math.random() * flakes.length)];
+    flake.style.cssText = `
+      left:${Math.random() * 100}%;
+      font-size:${0.6 + Math.random() * 1.2}rem;
+      animation-duration:${3 + Math.random() * 5}s;
+      animation-delay:${Math.random() * -8}s;
+      opacity:${0.5 + Math.random() * 0.5};
+    `;
+    container.appendChild(flake);
+  }
+}
+
+function buildFog() {
+  const container = document.getElementById('fog-container');
+  const positions = ['20%','40%','60%','75%','50%'];
+  positions.forEach((top, i) => {
+    const layer = document.createElement('div');
+    layer.className = 'fog-layer';
+    layer.style.cssText = `
+      top:${top};
+      height:${80 + i * 30}px;
+      animation-duration:${12 + i * 4}s;
+      animation-delay:${i * -3}s;
+      opacity:${0.4 + i * 0.08};
+    `;
+    container.appendChild(layer);
+  });
+}
+
+function flashLightning() {
+  const bolt = document.getElementById('lightning');
+  bolt.style.opacity = '1';
+  setTimeout(() => { bolt.style.opacity = '0'; }, 80);
+  setTimeout(() => {
+    bolt.style.opacity = '0.6';
+    setTimeout(() => { bolt.style.opacity = '0'; }, 60);
+  }, 150);
+  // Schedule next flash at random interval
+  if (lightningTimer) clearInterval(lightningTimer);
+  lightningTimer = setTimeout(flashLightning, 3000 + Math.random() * 8000);
+}
+
+// Kick off — fetch immediately then every 10 minutes
+fetchWeather();
+setInterval(fetchWeather, 10 * 60 * 1000);
 </script>
 </body>
 </html>
